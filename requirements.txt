@@ -1,0 +1,5 @@
+albumentations>=2.0.0
+opencv-python-headless
+tqdm
+numpy
+pillow
