@@ -369,6 +369,7 @@ def main():
             patience_counter = 0
         else:
             patience_counter += 1
+            print(f"Early Stopping counter: {patience_counter}/{args.patience} epochs without improvement.")
             
         # Run mAP evaluation every 5 epochs or at the last epoch
         if (epoch + 1) % 5 == 0 or (epoch + 1) == args.epochs:
