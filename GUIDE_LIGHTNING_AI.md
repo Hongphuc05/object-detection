@@ -43,15 +43,24 @@ python train.py \
 
 ---
 
-### Giai đoạn 2: Tinh chỉnh trên tập dữ liệu Public (Fine-tuning)
+## Quyết định sau khi hoàn thành Giai đoạn 1
 
-Sau khi có file trọng số `best.pth` từ Giai đoạn 1, chúng ta sẽ nạp nó vào mô hình bằng tham số `--weights` mới được cập nhật để bắt đầu huấn luyện tinh chỉnh (Fine-tuning) trên tập dữ liệu `public`.
+Sau khi kết thúc Giai đoạn 1 (Pascal VOC), bạn có 2 lựa chọn:
 
-> [!TIP]
-> **Mẹo Tối ưu Tinh chỉnh (Fine-tuning Tip):** 
-> Khi fine-tune trên tập dữ liệu mới nhỏ hơn, ta nên giảm tốc độ học xuống một chút (ví dụ dùng `--lr 5e-4` hoặc `--lr 2e-4` thay vì `1e-3` mặc định) để tránh làm "vỡ" các đặc trưng quan trọng mà mô hình đã học được ở giai đoạn trước từ tập Pascal VOC.
+### Lựa chọn A: DỪNG LẠI (Stop)
+Nếu bạn đã hài lòng với mô hình huấn luyện trên Pascal VOC hoặc không muốn huấn luyện thêm:
+* Bạn đã hoàn tất quá trình huấn luyện.
+* Trọng số mô hình tốt nhất đã được lưu tại: `checkpoints/pascal/best.pth` (tối ưu theo mAP) hoặc `checkpoints/pascal/best_loss.pth` (tối ưu theo Loss).
 
-**Lệnh chạy:**
+---
+
+### Lựa chọn B: TIẾP TỤC HUẤN LUYỆN (Fine-tuning trên tập Public)
+Nếu bạn muốn chuyển giao tri thức từ tập dữ liệu lớn Pascal VOC sang tập dữ liệu Public của mình để tối ưu hóa mAP:
+
+1. **Sử dụng trọng số tốt nhất:** Truyền file checkpoint tốt nhất vừa lưu được ở Giai đoạn 1 thông qua tham số `--weights checkpoints/pascal/best.pth`.
+2. **Khởi tạo lại tốc độ học (Reset Learning Rate):** Vì tập Public nhỏ hơn Pascal VOC, ta cần giảm tốc độ học xuống thấp hơn mức mặc định `1e-3` (ví dụ sử dụng `--lr 5e-4` hoặc `--lr 2e-4`) để tinh chỉnh nhẹ nhàng các trọng số, tránh làm phá vỡ các đặc trưng quan trọng mà mô hình đã học trước đó.
+
+**Lệnh chạy Fine-tuning:**
 ```bash
 python train.py \
   --train_data data/public/annotations/train.json \
@@ -67,9 +76,9 @@ python train.py \
 ```
 
 *Trong đó:*
-* `--weights checkpoints/pascal/best.pth`: Chỉ định file trọng số tốt nhất đã học từ tập Pascal làm điểm bắt đầu.
-* `--checkpoint_dir checkpoints/public`: Chỉ định thư mục lưu trọng số sau khi tinh chỉnh trên tập Public.
-* `--lr 5e-4`: Tốc độ học nhỏ hơn một chút để giữ lại bộ đặc trưng tốt từ tập dữ liệu lớn.
+* `--weights checkpoints/pascal/best.pth`: Dùng trọng số tốt nhất từ Giai đoạn 1 làm điểm bắt đầu.
+* `--lr 5e-4`: Tốc độ học được reset thấp hơn (5e-4) để tinh chỉnh mô hình mượt mà trên tập dữ liệu mới.
+* `--checkpoint_dir checkpoints/public`: Nơi lưu các trọng số sau khi hoàn thành tinh chỉnh.
 
 ---
 
