@@ -10,26 +10,28 @@ Với GPU T4 (16GB VRAM), chúng ta có thể nâng cao dung lượng mạng và
 
 ```mermaid
 graph TD
-    Input[Ảnh đầu vào WxH - đề xuất 512x512 hoặc 640x640] --> Stem[ConvNeXt-Tiny Backbone]
-    Stem --> P3[P3 feature map - Stride 8 / 192 channels]
-    Stem --> P4[P4 feature map - Stride 16 / 384 channels]
-    Stem --> P5[P5 feature map - Stride 32 / 768 channels]
+    Input["Ảnh đầu vào WxH - đề xuất 512x512 hoặc 640x640"] --> Stem["ConvNeXt-Tiny Backbone"]
+    Stem --> P3["P3 feature map - Stride 8 / 192 channels"]
+    Stem --> P4["P4 feature map - Stride 16 / 384 channels"]
+    Stem --> P5["P5 feature map - Stride 32 / 768 channels"]
     
-    P3 & P4 & P5 --> Neck[PANet - Path Aggregation Network]
+    P3 --> Neck["PANet - Path Aggregation Network"]
+    P4 --> Neck
+    P5 --> Neck
     
-    Neck --> N3[N3 feature map - Stride 8 / 256 channels]
-    Neck --> N4[N4 feature map - Stride 16 / 256 channels]
-    Neck --> N5[N5 feature map - Stride 32 / 256 channels]
+    Neck --> N3["N3 feature map - Stride 8 / 256 channels"]
+    Neck --> N4["N4 feature map - Stride 16 / 256 channels"]
+    Neck --> N5["N5 feature map - Stride 32 / 256 channels"]
     
-    N3 --> H3[Decoupled Head P3]
-    N4 --> H4[Decoupled Head P4]
-    N5 --> H5[Decoupled Head P5]
+    N3 --> H3["Decoupled Head P3"]
+    N4 --> H4["Decoupled Head P4"]
+    N5 --> H5["Decoupled Head P5"]
     
-    subgraph Decoupled Head
-        H_in[Feature Map] --> ClsBranch[Nhánh Phân Lớp: Conv x2 -> Cls Predicts 5 ch]
-        H_in --> RegBranch[Nhánh Tọa Độ: Conv x2]
-        RegBranch --> BboxBranch[Bbox Predicts: 4 ch offset dx, dy, scale dw, dh]
-        RegBranch --> ObjBranch[Obj Predicts: 1 ch]
+    subgraph DH["Decoupled Head"]
+        H_in["Feature Map"] --> ClsBranch["Nhánh Phân Lớp: Conv x2 -> Cls Predicts 5 ch"]
+        H_in --> RegBranch["Nhánh Tọa Độ: Conv x2"]
+        RegBranch --> BboxBranch["Bbox Predicts: 4 ch offset dx, dy, scale dw, dh"]
+        RegBranch --> ObjBranch["Obj Predicts: 1 ch"]
     end
 ```
 
