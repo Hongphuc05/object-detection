@@ -1,0 +1,22 @@
+# PyTorch model checkpoints
+*.pth
+models/
+
+# Datasets
+data/
+
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
+
+# Ignore large archives
+*.zip
+*.tar.gz

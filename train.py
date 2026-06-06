@@ -40,7 +40,7 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=1e-3, help="Initial learning rate.")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay for AdamW.")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of data loader workers.")
-    parser.add_argument("--patience", type=int, default=10, help="Patience for early stopping based on val loss.")
+    parser.add_argument("--patience", type=int, default=20, help="Patience for early stopping based on val loss.")
     
     return parser.parse_args()
 
@@ -387,7 +387,7 @@ def main():
             print(f"\nEarly stopping triggered! Training stopped at epoch {epoch + 1} because validation loss did not improve for {args.patience} consecutive epochs.")
             # Run a final mAP evaluation if it hasn't just been run in this epoch
             if (epoch + 1) % 5 != 0:
-                evaluate_map(
+                current_map = evaluate_map(
                     model=model,
                     val_data_path=args.val_data,
                     val_image_dir=args.val_image_dir,
@@ -396,6 +396,11 @@ def main():
                     use_amp=use_amp,
                     classes=val_dataset.classes
                 )
+                if current_map > best_map:
+                    best_map = current_map
+                    best_path = os.path.join(args.checkpoint_dir, 'best.pth')
+                    torch.save(model.state_dict(), best_path)
+                    print(f"New best mAP model saved to {best_path} (mAP@0.5: {best_map:.4f})")
             break
 
     print("\nTraining completed!")

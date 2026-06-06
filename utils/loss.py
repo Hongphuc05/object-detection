@@ -234,8 +234,8 @@ class ComputeLoss:
             obj_loss += obj_loss_level
 
         # Compute weighted total loss
-        # Typical weight values: reg = 5.0, cls = 1.0, obj = 1.0
-        total_loss = 5.0 * reg_loss + 1.0 * cls_loss + 1.0 * obj_loss
+        # Typical weight values: reg = 5.0, cls = 2.0, obj = 2.0
+        total_loss = 5.0 * reg_loss + 2.0 * cls_loss + 2.0 * obj_loss
         
         return total_loss, {
             'loss': total_loss.item(),
