@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay for AdamW.")
     parser.add_argument("--num_workers", type=int, default=0, help="Number of data loader workers.")
     parser.add_argument("--patience", type=int, default=20, help="Patience for early stopping based on val loss.")
+    parser.add_argument("--weights", type=str, default="", help="Path to pre-trained weights to resume or fine-tune.")
     
     return parser.parse_args()
 
@@ -298,6 +299,15 @@ def main():
     num_classes = len(train_dataset.classes)
     print(f"Initializing Detector model with {num_classes} classes...")
     model = Detector(num_classes=num_classes, pretrained=True)
+    
+    if args.weights:
+        if os.path.exists(args.weights):
+            print(f"Loading weights from {args.weights}...")
+            state_dict = torch.load(args.weights, map_location='cpu')
+            model.load_state_dict(state_dict)
+        else:
+            print(f"Warning: weights file '{args.weights}' not found. Starting training from scratch/pretrained backbone.")
+            
     model.to(device)
     
     compute_loss = ComputeLoss(num_classes=num_classes, device=device)

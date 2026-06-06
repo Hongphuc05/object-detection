@@ -93,9 +93,20 @@ Cài đặt các thư viện cần thiết bằng lệnh:
 
 ### Bước 6: Chạy Huấn luyện (Training)
 Chạy tập lệnh `train.py` với các tham số tương tự như chạy cục bộ. Bạn có thể tăng `batch_size` lên `16` hoặc `32` (do GPU T4 có 16GB VRAM) và tăng `num_workers` lên `2` để đẩy nhanh tiến độ tải dữ liệu.
+```bash
+python train.py \
+  --train_data data/pascal/annotations/train.json \
+  --val_data data/pascal/annotations/val.json \
+  --image_dir data/pascal/images \
+  --val_image_dir data/pascal/images \
+  --checkpoint_dir checkpoints/pascal \
+  --epochs 100 \
+  --batch_size 16 \
+  --num_workers 2
+```
 
 ```bash
-!python train.py \
+python train.py \
   --train_data data/public/annotations/train.json \
   --val_data data/public/annotations/val.json \
   --image_dir data/public/train/images \
