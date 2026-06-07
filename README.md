@@ -57,12 +57,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
 Chạy lệnh huấn luyện bắt buộc sau để bắt đầu huấn luyện mô hình:
 ```bash
-python train.py \
-  --train_data ./public/annotations/train.json \
-  --val_data ./public/annotations/val.json \
-  --image_dir ./public/train/images \
-  --val_image_dir ./public/val/images \
-  --checkpoint_dir ./models/
+python train.py --train_data ./public/annotations/train.json --val_data ./public/annotations/val.json --image_dir ./public/train/images --val_image_dir ./public/val/images --checkpoint_dir ./models/
 ```
 *Lưu ý:*
 *   Trọng số mô hình có Validation Loss tốt nhất sẽ tự động được lưu vào tệp `./models/best.pth`.
@@ -75,11 +70,22 @@ python train.py \
 
 Để chạy suy luận trên tập ảnh kiểm tra và xuất kết quả theo đúng định dạng yêu cầu, sử dụng lệnh bắt buộc:
 ```bash
-python predict.py \
-  --image_dir /path/to/images \
-  --output predictions.json
+python predict.py --image_dir /path/to/images --output predictions.json
 ```
 *Lưu ý:*
 *   Kịch bản suy luận mặc định sẽ tải trọng số mô hình tốt nhất từ `./models/best.pth`.
 *   Các tham số ngưỡng tin cậy `--conf_thres` (mặc định: 0.05) và ngưỡng NMS `--iou_thres` (mặc định: 0.5) có thể điều chỉnh để tìm điểm cân bằng Recall/Precision tối ưu nhất khi chấm mAP.
 *   Tệp đầu ra `predictions.json` sẽ được định dạng chuẩn JSON mảng chứa thông tin đối tượng và hộp bao tương tự tệp kiểm tra mẫu.
+*   *Chạy thực tế trên dự án của bạn (nếu `public` nằm trong `data`):* `python predict.py --image_dir data/public/val/images --output val_predictions.json`
+
+---
+
+## 6. Hướng dẫn tự chấm điểm (Self-Evaluation / Scoring)
+
+Bạn có thể tự kiểm tra định dạng và tính toán điểm số (mAP@0.5, precision, recall) trên tập kiểm định bằng công cụ chấm điểm đi kèm:
+```bash
+python public/tools/evaluate_predictions.py --ground_truth public/annotations/val.json --predictions predictions.json --output score.json
+```
+*Lưu ý:*
+*   *Chạy thực tế trên dự án của bạn (nếu `public` nằm trong `data`):* `python data/public/tools/evaluate_predictions.py --ground_truth data/public/annotations/val.json --predictions val_predictions.json --output val_score.json`
+*   Công cụ chấm sẽ tự động kiểm tra định dạng file JSON đầu ra, kiểm tra tính hợp lệ của nhãn lớp và tọa độ hộp bao trước khi xuất kết quả điểm số ra tệp chỉ định.
