@@ -73,6 +73,8 @@ def non_max_suppression(all_bboxes, all_obj_scores, all_cls_probs, conf_thres=0.
     B = all_bboxes.shape[0]
     detections = []
     
+    device = all_bboxes.device
+    
     for i in range(B):
         # Calculate final class-specific detection scores
         scores = all_obj_scores[i] * all_cls_probs[i]  # [total_cells, num_classes]
@@ -83,12 +85,13 @@ def non_max_suppression(all_bboxes, all_obj_scores, all_cls_probs, conf_thres=0.
         # Filter by confidence threshold
         keep_mask = max_scores > conf_thres
         
-        bboxes = all_bboxes[i][keep_mask]
-        confidences = max_scores[keep_mask]
-        cls_ids = class_ids[keep_mask]
+        # Move filtered tensors to CPU to avoid extremely slow GPU-CPU synchronization inside py_nms loop
+        bboxes = all_bboxes[i][keep_mask].cpu()
+        confidences = max_scores[keep_mask].cpu()
+        cls_ids = class_ids[keep_mask].cpu()
         
         if bboxes.shape[0] == 0:
-            detections.append(torch.zeros((0, 6), dtype=torch.float32, device=all_bboxes.device))
+            detections.append(torch.zeros((0, 6), dtype=torch.float32, device=device))
             continue
             
         # Class-wise NMS trick: offset boxes based on their class ID
@@ -96,13 +99,13 @@ def non_max_suppression(all_bboxes, all_obj_scores, all_cls_probs, conf_thres=0.
         offsets = cls_ids.float() * 4096.0
         offset_boxes = bboxes + offsets.unsqueeze(1)
         
-        # Run custom NMS
+        # Run custom NMS on CPU (instantaneous compared to GPU sync)
         keep_indices = py_nms(offset_boxes, confidences, iou_thres)
         
-        # Select final boxes, scores, and class IDs
-        final_boxes = bboxes[keep_indices]
-        final_scores = confidences[keep_indices]
-        final_cls_ids = cls_ids[keep_indices].float()
+        # Select final boxes, scores, and class IDs and move back to original device
+        final_boxes = bboxes[keep_indices].to(device)
+        final_scores = confidences[keep_indices].to(device)
+        final_cls_ids = cls_ids[keep_indices].float().to(device)
         
         # Stack to form [xmin, ymin, xmax, ymax, confidence, class_id]
         img_dets = torch.cat([final_boxes, final_scores.unsqueeze(1), final_cls_ids.unsqueeze(1)], dim=1)

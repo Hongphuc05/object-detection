@@ -5,6 +5,7 @@ import glob
 import cv2
 import numpy as np
 import torch
+from tqdm import tqdm
 
 from models.detector import Detector, decode_predictions
 from utils.nms import non_max_suppression
@@ -77,7 +78,7 @@ def main():
     results = []
     
     with torch.no_grad():
-        for img_path in image_paths:
+        for img_path in tqdm(image_paths, desc="Inference"):
             img_id = os.path.basename(img_path)
             
             # Preprocess image
