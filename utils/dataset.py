@@ -10,7 +10,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 class ObjectDetectionDataset(Dataset):
-    def __init__(self, json_path, img_dir, img_size=512, augment=False):
+    def __init__(self, json_path, img_dir, img_size=512, augment=False, mosaic_prob=0.25, mixup_prob=0.10):
         """
         Args:
             json_path (str): Path to annotations JSON file (train.json or val.json).
@@ -21,6 +21,9 @@ class ObjectDetectionDataset(Dataset):
         self.img_dir = Path(img_dir) if isinstance(img_dir, str) else img_dir
         self.img_size = img_size
         self.augment = augment
+        self.mosaic_prob = mosaic_prob
+        self.mixup_prob = mixup_prob
+        self.advanced_augment = True
 
         # Load JSON data
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -46,8 +49,14 @@ class ObjectDetectionDataset(Dataset):
                 A.Resize(height=self.img_size, width=self.img_size),
                 A.HorizontalFlip(p=0.5),
                 A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1, p=0.5),
-                A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=10, 
-                                   border_mode=cv2.BORDER_CONSTANT, cval=(114, 114, 114), p=0.5),
+                A.Affine(
+                    translate_percent=(-0.0625, 0.0625),
+                    scale=(0.9, 1.1),
+                    rotate=(-10, 10),
+                    border_mode=cv2.BORDER_CONSTANT,
+                    fill=(114, 114, 114),
+                    p=0.5,
+                ),
                 A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
                 ToTensorV2()
             ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['class_labels'], min_area=2, min_visibility=0.1))
@@ -60,6 +69,9 @@ class ObjectDetectionDataset(Dataset):
 
     def __len__(self):
         return len(self.image_ids)
+
+    def close_advanced_augment(self):
+        self.advanced_augment = False
 
     def load_image_and_annotations(self, index):
         """Loads raw image and raw annotations for a given index."""
@@ -101,7 +113,8 @@ class ObjectDetectionDataset(Dataset):
         
         # Scale bounding boxes to match target image size
         scaled_bboxes = []
-        for box in bboxes:
+        valid_labels = []
+        for box, label in zip(bboxes, labels):
             xmin = box[0] * (s / w)
             ymin = box[1] * (s / h)
             xmax = box[2] * (s / w)
@@ -113,12 +126,7 @@ class ObjectDetectionDataset(Dataset):
             ymax = max(0.0, min(ymax, s))
             if (xmax - xmin) > 2 and (ymax - ymin) > 2:
                 scaled_bboxes.append([xmin, ymin, xmax, ymax])
-            else:
-                # If box is too small, skip it (label will be removed below)
-                pass
-                
-        # Filter class labels accordingly
-        valid_labels = [labels[i] for i in range(len(scaled_bboxes))]
+                valid_labels.append(label)
         
         resized_img = cv2.resize(img, (s, s), interpolation=cv2.INTER_LINEAR)
         return resized_img, scaled_bboxes, valid_labels
@@ -208,7 +216,7 @@ class ObjectDetectionDataset(Dataset):
                 final_labels.append(label)
                 
         return crop_img, final_bboxes, final_labels
-
+ 
     def load_mixup(self, index):
         """Applies Mixup between a mosaic image and another image."""
         img1, bboxes1, labels1 = self.load_mosaic(index)
@@ -233,16 +241,13 @@ class ObjectDetectionDataset(Dataset):
 
     def __getitem__(self, index):
         # Determine whether to apply advanced data augmentation (Mosaic / Mixup)
-        if self.augment:
+        if self.augment and self.advanced_augment:
             p = random.random()
-            if p < 0.4:
-                # 40% chance: Mixup (which internally calls Mosaic)
+            if p < self.mixup_prob:
                 img, bboxes, labels = self.load_mixup(index)
-            elif p < 0.8:
-                # 40% chance: Mosaic
+            elif p < self.mixup_prob + self.mosaic_prob:
                 img, bboxes, labels = self.load_mosaic(index)
             else:
-                # 20% chance: Normal resized image
                 img, bboxes, labels = self.load_normal(index)
         else:
             img, bboxes, labels = self.load_normal(index)

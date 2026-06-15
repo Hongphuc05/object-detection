@@ -9,7 +9,7 @@ import torch
 from tqdm import tqdm
 
 from utils.config import DEFAULT_CLASSES, detect_device, extract_model_state, torch_load_compat
-from models.detector import Detector, decode_predictions
+from utils.detector import Detector, decode_predictions
 from utils.nms import non_max_suppression
 
 

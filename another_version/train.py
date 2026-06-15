@@ -24,7 +24,7 @@ from utils.config import (
     torch_load_compat,
 )
 from utils.dataset import ObjectDetectionDataset, collate_fn
-from models.detector import Detector, decode_predictions
+from utils.detector import Detector, decode_predictions
 from utils.loss import ComputeLoss
 from utils.nms import non_max_suppression
 
@@ -216,12 +216,8 @@ def validate(model, dataloader, compute_loss, device, use_amp, use_channels_last
 def load_evaluation_module(val_data_path):
     repo_root = Path(__file__).resolve().parent
     dataset_root = Path(val_data_path).resolve().parents[1]
-    
-    # Expanded candidate list for evaluate_predictions.py locations
     candidates = [
         dataset_root / "tools" / "evaluate_predictions.py",
-        repo_root / "data" / "public" / "tools" / "evaluate_predictions.py",
-        repo_root / "datasets" / "tools" / "evaluate_predictions.py",
         repo_root / "public" / "tools" / "evaluate_predictions.py",
     ]
 
